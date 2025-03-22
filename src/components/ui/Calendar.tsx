@@ -1,6 +1,6 @@
 // components/ui/Calendar.tsx
 
-import React from "react";
+import React, { useState } from "react";
 import { Calendar, dateFnsLocalizer } from "react-big-calendar";
 import { format } from "date-fns";
 import { parse } from "date-fns";
@@ -8,53 +8,193 @@ import { startOfWeek } from "date-fns";
 import { getDay } from "date-fns";
 import { enUS } from "date-fns/locale/en-US";
 import "react-big-calendar/lib/css/react-big-calendar.css";
+import { Button } from "@/components/ui/Button";
+import Modal from "@/components/ui/Modal";
 
 interface Event {
-  title: string;
-  start: Date;
-  end: Date;
-  tag?: string;
+    title: string;
+    start: Date | undefined;
+    tag?: string;
+    caption?: string;
+    image?: string;
+    video?: string;
 }
 
 const locales = {
-  "en-US": enUS,
+    "en-US": enUS,
 };
 
 const localizer = dateFnsLocalizer({
-  format,
-  parse,
-  startOfWeek,
-  getDay,
-  locales,
+    format,
+    parse,
+    startOfWeek,
+    getDay,
+    locales,
 });
 
-const events: Event[] = [
-  {
-    title: "Schedule AI Post",
-    start: new Date(2025, 2, 25, 10, 0),
-    end: new Date(2025, 2, 25, 11, 0),
-    tag: "AI",
-  },
-  {
-    title: "Design Marketing Image",
-    start: new Date(2025, 2, 26, 13, 0),
-    end: new Date(2025, 2, 26, 14, 0),
-    tag: "Marketing",
-  },
-];
-
 const MyCalendar: React.FC = () => {
-  return (
-    <div className="h-screen p-4">
-      <Calendar
-        localizer={localizer}
-        events={events}
-        startAccessor="start"
-        endAccessor="end"
-        style={{ height: "100%" }}
-      />
-    </div>
-  );
+    const renderField = (label: string, value?: string) => (
+        <p>
+            <strong>{label}:</strong> {value || "—"}
+        </p>
+    );
+
+    const renderInput = (name: keyof Event, placeholder: string, value: string | undefined) => (
+        <input
+            name={name}
+            placeholder={placeholder}
+            value={value}
+            onChange={handleFormChange}
+            className="border p-2 mb-2 w-full"
+        />
+    );
+
+    const renderDateInput = (name: keyof Event, value: Date | undefined) => (
+        <input
+            type="datetime-local"
+            name={name}
+            value={value instanceof Date && !isNaN(value.getTime()) ? value.toISOString().slice(0, 16) : ""}
+            onChange={handleFormChange}
+            className="border p-2 mb-2 w-full"
+            min={new Date().toISOString().slice(0, 16)}
+        />
+    );
+
+    const [events, setEvents] = useState<Event[]>([]);
+    const [selectedEvent, setSelectedEvent] = useState<Event | null>(null);
+    const [isCreating, setIsCreating] = useState(false);
+    const [isEditing, setIsEditing] = useState(false);
+    const [formData, setFormData] = useState<Event>({
+        title: "",
+        start: new Date(),
+        tag: "",
+        caption: "",
+        image: "",
+        video: "",
+    });
+
+    const handleCreatePost = () => {
+        setFormData({
+            title: "",
+            start: undefined,
+            tag: "",
+            caption: "",
+            image: "",
+            video: "",
+        });
+        setIsCreating(true);
+    };
+
+    const handleSelectEvent = (event: Event) => {
+        setSelectedEvent(event);
+    };
+
+    const handleClosePreviewModal = () => {
+        setSelectedEvent(null);
+    };
+
+    const handleCloseCreateOrEditModal = () => {
+        setIsCreating(false);
+        setIsEditing(false);
+
+    };
+
+    const handleFormChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const { name, value } = e.target;
+        setFormData((prev) => {
+            const updated = { ...prev, [name]: value };
+            if (name === "start") {
+                const date = new Date(value);
+                if (date >= new Date()) {
+                    updated.start = date;
+                }
+            }
+            return updated;
+        });
+    };
+
+    const handleFormSubmit = () => {
+        if (formData.start < new Date()) {
+            alert("Start date and time must be in the future.");
+            return;
+        }
+        if (isCreating) {
+            setEvents((prev) => [...prev, formData]);
+        } else if (selectedEvent) {
+            setEvents((prev) =>
+                prev.map((event) =>
+                    event === selectedEvent ? { ...formData } : event
+                )
+            );
+        }
+        setIsCreating(false);
+        setSelectedEvent(null);
+    };
+
+    return (
+        <div className="h-screen p-4">
+            <div className="flex justify-end mb-4">
+                <Button variant="default" onClick={handleCreatePost}>
+                    + Create Post
+                </Button>
+            </div>
+            <Calendar
+                localizer={localizer}
+                events={events}
+                startAccessor="start"
+                endAccessor="start"
+                style={{ height: "100%" }}
+                onSelectEvent={handleSelectEvent}
+            />
+
+            {(isEditing || isCreating) && (
+                <Modal onClose={handleCloseCreateOrEditModal}>
+                    <h2 className="text-xl font-bold mb-2">
+                        {isCreating ? "Create New Post" : "Edit Post"}
+                    </h2>
+                    {renderInput("title", "Title", formData.title)}
+                    {renderInput("tag", "Tag", formData.tag)}
+                    {renderInput("caption", "Caption", formData.caption)}
+                    {renderInput("image", "Image URL", formData.image)}
+                    {renderInput("video", "Video URL", formData.video)}
+                    {renderDateInput("start", formData.start)}
+                    <div className="flex justify-end gap-2 mt-2">
+                        <Button variant="default" onClick={handleFormSubmit}>
+                            Save
+                        </Button>
+                        <Button variant="outline" onClick={handleCloseCreateOrEditModal}>
+                            Cancel
+                        </Button>
+                    </div>
+                </Modal>
+            )}
+
+            {selectedEvent && (
+                <Modal onClose={handleClosePreviewModal}>
+                    <h2 className="text-xl font-bold mb-2">{selectedEvent.title}</h2>
+                    {renderField("Tag", selectedEvent.tag)}
+                    {renderField("Caption", selectedEvent.caption)}
+                    {renderField("Image", selectedEvent.image)}
+                    {renderField("Video", selectedEvent.video)}
+                    <div className="mt-4 flex justify-end gap-2">
+                        <Button
+                            variant="default"
+                            onClick={() => {
+                                setFormData(selectedEvent);
+                                setIsEditing(true);
+                                setSelectedEvent(null);
+                            }}
+                        >
+                            Edit
+                        </Button>
+                        <Button variant="outline" onClick={handleClosePreviewModal}>
+                            Close
+                        </Button>
+                    </div>
+                </Modal>
+            )}
+        </div>
+    );
 };
 
 export default MyCalendar;
