@@ -1,13 +1,11 @@
 import React, { useState } from "react";
 import { Calendar, dateFnsLocalizer } from "react-big-calendar";
-import { format } from "date-fns";
-import { parse } from "date-fns";
-import { startOfWeek } from "date-fns";
-import { getDay } from "date-fns";
+import { format, parse, startOfWeek, getDay } from "date-fns";
 import { enUS } from "date-fns/locale/en-US";
 import "react-big-calendar/lib/css/react-big-calendar.css";
 import { Button } from "@/components/ui/Button";
 import Modal from "@/components/ui/Modal";
+import { generateCaption } from "@/utils/generateCaption";
 
 interface Event {
     title: string;
@@ -133,6 +131,26 @@ const MyCalendar: React.FC = () => {
         setSelectedEvent(null);
     };
 
+    const generateAICaption = async () => {
+        const prompt = [formData.title, formData.image, formData.video]
+            .filter(Boolean)
+            .join(" - ");
+
+        if (!prompt) {
+            alert("Please provide a title to generate a caption.");
+            return;
+        }
+
+        setFormData((prev) => ({ ...prev, caption: "Generating caption..." }));
+
+        try {
+            const aiCaption = await generateCaption(prompt);
+            setFormData((prev) => ({ ...prev, caption: aiCaption }));
+        } catch (err) {
+            setFormData((prev) => ({ ...prev, caption: "Failed to generate caption." }));
+        }
+    };
+
     return (
         <div className="h-screen p-4">
             <div className="flex justify-end mb-4">
@@ -155,7 +173,12 @@ const MyCalendar: React.FC = () => {
                         {isCreating ? "Create New Post" : "Edit Post"}
                     </h2>
                     {renderInput("title", "Title", formData.title)}
-                    {renderInput("caption", "Caption", formData.caption)}
+                    <div className="mb-2">
+                        {renderInput("caption", "Caption", formData.caption)}
+                        <Button variant="outline" type="button" onClick={generateAICaption}>
+                            Generate Caption with AI
+                        </Button>
+                    </div>
                     {renderInput("image", "Image URL", formData.image)}
                     {renderInput("video", "Video URL", formData.video)}
                     {renderDateInput("datetime", formData.datetime)}
@@ -170,7 +193,7 @@ const MyCalendar: React.FC = () => {
                 </Modal>
             )}
 
-            {selectedEvent && !isEditing &&  (
+            {selectedEvent && !isEditing && (
                 <Modal onClose={handleClosePreviewModal}>
                     <h2 className="text-xl font-bold mb-2">{selectedEvent.title}</h2>
                     {renderField("Caption", selectedEvent.caption)}
