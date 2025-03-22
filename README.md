@@ -2,6 +2,10 @@
 
 This project is a lightweight content planning and visualization interface built with a modern frontend stack. It enables users to create, organize, and review entries on a calendar with optional AI-assisted input to streamline content creation.
 
+
+https://github.com/user-attachments/assets/4de366d7-6458-4f79-b292-9598802cb90d
+
+
 ## Features
 
 - Interactive calendar view for visual planning
