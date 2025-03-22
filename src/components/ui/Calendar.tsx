@@ -13,8 +13,7 @@ import Modal from "@/components/ui/Modal";
 
 interface Event {
     title: string;
-    start: Date | undefined;
-    tag?: string;
+    datetime: Date | undefined;
     caption?: string;
     image?: string;
     video?: string;
@@ -66,8 +65,7 @@ const MyCalendar: React.FC = () => {
     const [isEditing, setIsEditing] = useState(false);
     const [formData, setFormData] = useState<Event>({
         title: "",
-        start: new Date(),
-        tag: "",
+        datetime: new Date(),
         caption: "",
         image: "",
         video: "",
@@ -76,8 +74,7 @@ const MyCalendar: React.FC = () => {
     const handleCreatePost = () => {
         setFormData({
             title: "",
-            start: undefined,
-            tag: "",
+            datetime: undefined,
             caption: "",
             image: "",
             video: "",
@@ -96,17 +93,17 @@ const MyCalendar: React.FC = () => {
     const handleCloseCreateOrEditModal = () => {
         setIsCreating(false);
         setIsEditing(false);
-
+        setSelectedEvent(null);
     };
 
     const handleFormChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const { name, value } = e.target;
         setFormData((prev) => {
             const updated = { ...prev, [name]: value };
-            if (name === "start") {
+            if (name === "datetime") {
                 const date = new Date(value);
                 if (date >= new Date()) {
-                    updated.start = date;
+                    updated.datetime = date;
                 }
             }
             return updated;
@@ -114,13 +111,19 @@ const MyCalendar: React.FC = () => {
     };
 
     const handleFormSubmit = () => {
-        if (formData.start < new Date()) {
+        if (!formData.datetime) {
+            alert("Start date is required.");
+            return;
+        }
+
+        if (formData.datetime < new Date()) {
             alert("Start date and time must be in the future.");
             return;
         }
+
         if (isCreating) {
             setEvents((prev) => [...prev, formData]);
-        } else if (selectedEvent) {
+        } else if (isEditing) {
             setEvents((prev) =>
                 prev.map((event) =>
                     event === selectedEvent ? { ...formData } : event
@@ -128,6 +131,7 @@ const MyCalendar: React.FC = () => {
             );
         }
         setIsCreating(false);
+        setIsEditing(false);
         setSelectedEvent(null);
     };
 
@@ -141,8 +145,8 @@ const MyCalendar: React.FC = () => {
             <Calendar
                 localizer={localizer}
                 events={events}
-                startAccessor="start"
-                endAccessor="start"
+                startAccessor="datetime"
+                endAccessor="datetime"
                 style={{ height: "100%" }}
                 onSelectEvent={handleSelectEvent}
             />
@@ -153,11 +157,10 @@ const MyCalendar: React.FC = () => {
                         {isCreating ? "Create New Post" : "Edit Post"}
                     </h2>
                     {renderInput("title", "Title", formData.title)}
-                    {renderInput("tag", "Tag", formData.tag)}
                     {renderInput("caption", "Caption", formData.caption)}
                     {renderInput("image", "Image URL", formData.image)}
                     {renderInput("video", "Video URL", formData.video)}
-                    {renderDateInput("start", formData.start)}
+                    {renderDateInput("datetime", formData.datetime)}
                     <div className="flex justify-end gap-2 mt-2">
                         <Button variant="default" onClick={handleFormSubmit}>
                             Save
@@ -169,10 +172,9 @@ const MyCalendar: React.FC = () => {
                 </Modal>
             )}
 
-            {selectedEvent && (
+            {selectedEvent && !isEditing &&  (
                 <Modal onClose={handleClosePreviewModal}>
                     <h2 className="text-xl font-bold mb-2">{selectedEvent.title}</h2>
-                    {renderField("Tag", selectedEvent.tag)}
                     {renderField("Caption", selectedEvent.caption)}
                     {renderField("Image", selectedEvent.image)}
                     {renderField("Video", selectedEvent.video)}
@@ -182,7 +184,6 @@ const MyCalendar: React.FC = () => {
                             onClick={() => {
                                 setFormData(selectedEvent);
                                 setIsEditing(true);
-                                setSelectedEvent(null);
                             }}
                         >
                             Edit
