@@ -36,7 +36,7 @@ const MyCalendar: React.FC = () => {
     };
 
     return (
-        <div className="h-screen p-4">
+        <div className="h-screen p-4 overflow-y-hidden">
             <div className="flex justify-end mb-4">
                 <Button variant="default" onClick={() => (
                     setIsCreating(true))

@@ -4,7 +4,7 @@ import Modal from "@/components/ui/Modal";
 import { Post } from "@/types/Post";
 import { validatePost } from "@/utils/validation";
 import { generateCaption } from "@/utils/generatePost";
-import { generateImage } from "@/utils/generatePost"; 
+import { generateImage } from "@/utils/generatePost";
 
 interface Props {
   initialData?: Post | null;
@@ -24,6 +24,7 @@ const PostModal: React.FC<Props> = ({ initialData, isEditing, onSubmit, onClose 
   });
 
   const [errors, setErrors] = useState<Partial<Record<keyof Post, string>>>({});
+  const [isRenderingImage, setIsRenderingImage] = useState(false);
 
   useEffect(() => {
     if (initialData) {
@@ -76,13 +77,16 @@ const PostModal: React.FC<Props> = ({ initialData, isEditing, onSubmit, onClose 
       alert("Please enter a short description to generate an image.");
       return;
     }
-    setFormData((prev) => ({ ...prev, image: "Generating image..." }));
+    setIsRenderingImage(true);
+    setFormData((prev) => ({ ...prev, image: "" }));
     try {
-      const aiImageUrl = await generateImage(prompt); // Call the image generation function
+      const aiImageUrl = await generateImage(prompt);
       setFormData((prev) => ({ ...prev, image: aiImageUrl }));
-      setErrors((prev) => ({ ...prev, image: undefined }));
+      setIsRenderingImage(false);
     } catch {
-      setFormData((prev) => ({ ...prev, image: "Failed to generate image." }));
+      alert("Failed to create image.")
+      setFormData((prev) => ({ ...prev, image: "" }));
+      setIsRenderingImage(false);
     }
   };
 
@@ -135,7 +139,20 @@ const PostModal: React.FC<Props> = ({ initialData, isEditing, onSubmit, onClose 
           Generate Caption with AI
         </Button>
 
-        {renderInput("image", "Image URL", formData.image)}
+        {formData.image && !isRenderingImage && (
+          <div className="mb-4">
+            <img
+              src={formData.image}
+              alt="Generated"
+              className="w-full h-auto object-cover rounded-md"
+            />
+          </div>
+        )}
+
+        {isRenderingImage && (
+          <div className="text-left text-gray-500">Generating image...</div>
+        )}
+
         <Button variant="outline" type="button" className="mt-1 mb-4" onClick={generateAIImage}>
           Generate Image with AI
         </Button>

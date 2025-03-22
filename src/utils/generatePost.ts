@@ -37,7 +37,6 @@ export const generateCaption = async (prompt: string): Promise<string> => {
   }
 };
 
-
 export const generateImage = async (prompt: string): Promise<string> => {
   const apiKey = import.meta.env.VITE_OPENAI_API_KEY;
 
