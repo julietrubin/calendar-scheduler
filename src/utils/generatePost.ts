@@ -36,3 +36,31 @@ export const generateCaption = async (prompt: string): Promise<string> => {
     return "Couldn't generate caption. Try again!";
   }
 };
+
+
+export const generateImage = async (prompt: string): Promise<string> => {
+  const apiKey = import.meta.env.VITE_OPENAI_API_KEY;
+
+  try {
+    const response = await axios.post(
+      "https://api.openai.com/v1/images/generations", 
+      {
+        prompt: prompt,
+        n: 1,
+        size: "512x512", 
+      },
+      {
+        headers: {
+          Authorization: `Bearer ${apiKey}`,
+          "Content-Type": "application/json",
+        },
+      }
+    );
+
+    const imageUrl = response.data.data[0].url;
+    return imageUrl;
+  } catch (error) {
+    console.error("Error generating image:", error);
+    throw new Error("Failed to generate image.");
+  }
+};

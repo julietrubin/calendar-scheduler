@@ -3,7 +3,8 @@ import { Button } from "@/components/ui/Button";
 import Modal from "@/components/ui/Modal";
 import { Post } from "@/types/Post";
 import { validatePost } from "@/utils/validation";
-import { generateCaption } from "@/utils/generateCaption";
+import { generateCaption } from "@/utils/generatePost";
+import { generateImage } from "@/utils/generatePost"; 
 
 interface Props {
   initialData?: Post | null;
@@ -69,6 +70,22 @@ const PostModal: React.FC<Props> = ({ initialData, isEditing, onSubmit, onClose 
     }
   };
 
+  const generateAIImage = async () => {
+    const prompt = formData.description?.trim();
+    if (!prompt) {
+      alert("Please enter a short description to generate an image.");
+      return;
+    }
+    setFormData((prev) => ({ ...prev, image: "Generating image..." }));
+    try {
+      const aiImageUrl = await generateImage(prompt); // Call the image generation function
+      setFormData((prev) => ({ ...prev, image: aiImageUrl }));
+      setErrors((prev) => ({ ...prev, image: undefined }));
+    } catch {
+      setFormData((prev) => ({ ...prev, image: "Failed to generate image." }));
+    }
+  };
+
   const renderInput = (name: keyof Post, placeholder: string, value: string | undefined) => (
     <div className="mb-2">
       <input
@@ -119,6 +136,10 @@ const PostModal: React.FC<Props> = ({ initialData, isEditing, onSubmit, onClose 
         </Button>
 
         {renderInput("image", "Image URL", formData.image)}
+        <Button variant="outline" type="button" className="mt-1 mb-4" onClick={generateAIImage}>
+          Generate Image with AI
+        </Button>
+
         {renderInput("video", "Video URL", formData.video)}
         {renderDateInput("datetime", formData.datetime)}
 
