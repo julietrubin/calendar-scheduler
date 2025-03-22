@@ -19,7 +19,6 @@ const PostModal: React.FC<Props> = ({ initialData, isEditing, onSubmit, onClose 
     datetime: undefined,
     caption: "",
     image: "",
-    video: "",
     description: "",
   });
 
@@ -165,7 +164,6 @@ const PostModal: React.FC<Props> = ({ initialData, isEditing, onSubmit, onClose 
           Generate Image with AI
         </Button>
 
-        {renderInput("video", "Video URL", formData.video)}
         {renderDateInput("datetime", formData.datetime)}
 
         <div className="flex justify-end gap-2 mt-4">

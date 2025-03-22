@@ -14,16 +14,15 @@ const PostPreviewModal: React.FC<Props> = ({ post, onEdit, onClose }) => {
     <Modal onClose={onClose}>
       <h2 className="text-xl font-bold mb-2">{post.title}</h2>
       <div className="space-y-4">
-        
-        { post.image && (
+        {post.image && (
           <div className="mb-4">
             <img
               src={post.image}
               alt="Post Image"
               className="w-full h-auto object-cover rounded-md"
             />
-          </div>) }
-          <div>
+          </div>)}
+        <div>
           <strong>Caption:</strong> {post.caption}
         </div>
       </div>
