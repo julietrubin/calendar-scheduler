@@ -29,31 +29,53 @@ const localizer = dateFnsLocalizer({
 });
 
 const MyCalendar: React.FC = () => {
-    const renderField = (label: string, value?: string) => (
-        value ? <p>
-            <strong>{label}:</strong> {value}
-        </p> : <></>
+    const renderField = (label: string, value?: string) =>
+        value ? (
+            <p>
+                <strong>{label}:</strong> {value}
+            </p>
+        ) : null;
+
+    const renderInput = (
+        name: keyof Event,
+        placeholder: string,
+        value: string | undefined
+    ) => (
+        <div className="mb-2">
+            <input
+                name={name}
+                placeholder={placeholder}
+                value={value}
+                onChange={handleFormChange}
+                className="border p-2 w-full"
+            />
+            {errors[name] && (
+                <p className="text-red-500 text-sm mt-1">{errors[name]}</p>
+            )}
+        </div>
     );
 
-    const renderInput = (name: keyof Event, placeholder: string, value: string | undefined) => (
-        <input
-            name={name}
-            placeholder={placeholder}
-            value={value}
-            onChange={handleFormChange}
-            className="border p-2 mb-2 w-full"
-        />
-    );
-
-    const renderDateInput = (name: keyof Event, value: Date | undefined) => (
-        <input
-            type="datetime-local"
-            name={name}
-            value={value instanceof Date && !isNaN(value.getTime()) ? value.toISOString().slice(0, 16) : ""}
-            onChange={handleFormChange}
-            className="border p-2 mb-2 w-full"
-            min={new Date().toISOString().slice(0, 16)}
-        />
+    const renderDateInput = (
+        name: keyof Event,
+        value: Date | undefined
+    ) => (
+        <div className="mb-2">
+            <input
+                type="datetime-local"
+                name={name}
+                value={
+                    value instanceof Date && !isNaN(value.getTime())
+                        ? value.toISOString().slice(0, 16)
+                        : ""
+                }
+                onChange={handleFormChange}
+                className="border p-2 w-full"
+                min={new Date().toISOString().slice(0, 16)}
+            />
+            {errors[name] && (
+                <p className="text-red-500 text-sm mt-1">{errors[name]}</p>
+            )}
+        </div>
     );
 
     const [events, setEvents] = useState<Event[]>([]);
@@ -69,6 +91,28 @@ const MyCalendar: React.FC = () => {
         description: "",
     });
 
+    const [errors, setErrors] = useState<Partial<Record<keyof Event, string>>>({});
+
+
+    const validateForm = () => {
+        const newErrors: typeof errors = {};
+
+        if (!formData.title?.trim()) {
+            newErrors.title = "Title is required.";
+        }
+        if (!formData.caption?.trim()) {
+            newErrors.caption = "Caption is required.";
+        }
+        if (!formData.datetime) {
+            newErrors.datetime = "Date and time are required.";
+        } else if (formData.datetime < new Date()) {
+            newErrors.datetime = "Date and time must be in the future.";
+        }
+
+        setErrors(newErrors);
+        return Object.keys(newErrors).length === 0;
+    };
+
     const handleCreatePost = () => {
         setFormData({
             title: "",
@@ -78,6 +122,7 @@ const MyCalendar: React.FC = () => {
             video: "",
             description: "",
         });
+        setErrors({});
         setIsCreating(true);
     };
 
@@ -93,42 +138,31 @@ const MyCalendar: React.FC = () => {
         setIsCreating(false);
         setIsEditing(false);
         setSelectedEvent(null);
+        setErrors({});
     };
 
-    const handleFormChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+    const handleFormChange = (
+        e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
+    ) => {
         const { name, value } = e.target;
         setFormData((prev) => {
             const updated = { ...prev, [name]: value };
+
             if (name === "datetime") {
                 const date = new Date(value);
                 if (date >= new Date()) {
                     updated.datetime = date;
                 }
             }
+
             return updated;
         });
+
+        setErrors((prev) => ({ ...prev, [name]: undefined }));
     };
 
     const handleFormSubmit = () => {
-        if (!formData.caption) {
-            alert("Caption is required.");
-            return;  
-        }
-        
-        if (!formData.title) {
-            alert("Title is required.");
-            return;  
-        }
-
-        if (!formData.datetime) {
-            alert("Start date is required.");
-            return;
-        }
-
-        if (formData.datetime < new Date()) {
-            alert("Start date and time must be in the future.");
-            return;
-        }
+        if (!validateForm()) return;
 
         if (isCreating) {
             setEvents((prev) => [...prev, formData]);
@@ -157,8 +191,12 @@ const MyCalendar: React.FC = () => {
         try {
             const aiCaption = await generateCaption(prompt);
             setFormData((prev) => ({ ...prev, caption: aiCaption }));
+            setErrors((prev) => ({ ...prev, caption: undefined }));
         } catch (err) {
-            setFormData((prev) => ({ ...prev, caption: "Failed to generate caption." }));
+            setFormData((prev) => ({
+                ...prev,
+                caption: "Failed to generate caption.",
+            }));
         }
     };
 
@@ -183,26 +221,34 @@ const MyCalendar: React.FC = () => {
                     <h2 className="text-xl font-bold mb-2">
                         {isCreating ? "Create New Post" : "Edit Post"}
                     </h2>
+
                     {renderInput("title", "Title", formData.title)}
+
                     <div className="mb-2">
                         <textarea
                             name="description"
                             placeholder="Describe what your post is about..."
                             value={formData.description}
                             onChange={handleFormChange}
-                            className="border p-2 mb-2 w-full h-24 resize-none"
+                            className="border p-2 w-full h-24 resize-none"
                         />
                     </div>
-                    <div className="mb-2">
-                        {renderInput("caption", "Caption", formData.caption)}
-                        <Button variant="outline" type="button" onClick={generateAICaption}>
-                            Generate Caption with AI
-                        </Button>
-                    </div>
+
+                    {renderInput("caption", "Caption", formData.caption)}
+                    <Button
+                        variant="outline"
+                        type="button"
+                        className="mt-1 mb-4"
+                        onClick={generateAICaption}
+                    >
+                        Generate Caption with AI
+                    </Button>
+
                     {renderInput("image", "Image URL", formData.image)}
                     {renderInput("video", "Video URL", formData.video)}
                     {renderDateInput("datetime", formData.datetime)}
-                    <div className="flex justify-end gap-2 mt-2">
+
+                    <div className="flex justify-end gap-2 mt-4">
                         <Button variant="default" onClick={handleFormSubmit}>
                             Save
                         </Button>
