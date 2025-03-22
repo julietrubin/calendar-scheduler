@@ -1,5 +1,3 @@
-// components/ui/Calendar.tsx
-
 import React, { useState } from "react";
 import { Calendar, dateFnsLocalizer } from "react-big-calendar";
 import { format } from "date-fns";
