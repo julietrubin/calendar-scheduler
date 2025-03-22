@@ -3,6 +3,5 @@ export interface Post {
     datetime: Date | undefined;
     caption?: string;
     image?: string;
-    video?: string;
     description?: string;
   }
