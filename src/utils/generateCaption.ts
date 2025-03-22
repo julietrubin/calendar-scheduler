@@ -12,7 +12,7 @@ export const generateCaption = async (prompt: string): Promise<string> => {
         messages: [
           {
             role: "system",
-            content: "You're a helpful assistant who writes catchy social media captions.",
+            content: "You're a helpful assistant who writes catchy social media captions. Do not include quotation marks.",
           },
           {
             role: "user",

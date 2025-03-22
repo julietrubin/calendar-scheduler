@@ -13,6 +13,7 @@ interface Event {
     caption?: string;
     image?: string;
     video?: string;
+    description?: string;
 }
 
 const locales = {
@@ -29,9 +30,9 @@ const localizer = dateFnsLocalizer({
 
 const MyCalendar: React.FC = () => {
     const renderField = (label: string, value?: string) => (
-        <p>
-            <strong>{label}:</strong> {value || "—"}
-        </p>
+        value ? <p>
+            <strong>{label}:</strong> {value}
+        </p> : <></>
     );
 
     const renderInput = (name: keyof Event, placeholder: string, value: string | undefined) => (
@@ -65,6 +66,7 @@ const MyCalendar: React.FC = () => {
         caption: "",
         image: "",
         video: "",
+        description: "",
     });
 
     const handleCreatePost = () => {
@@ -74,6 +76,7 @@ const MyCalendar: React.FC = () => {
             caption: "",
             image: "",
             video: "",
+            description: "",
         });
         setIsCreating(true);
     };
@@ -92,7 +95,7 @@ const MyCalendar: React.FC = () => {
         setSelectedEvent(null);
     };
 
-    const handleFormChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const handleFormChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
         const { name, value } = e.target;
         setFormData((prev) => {
             const updated = { ...prev, [name]: value };
@@ -107,6 +110,16 @@ const MyCalendar: React.FC = () => {
     };
 
     const handleFormSubmit = () => {
+        if (!formData.caption) {
+            alert("Caption is required.");
+            return;  
+        }
+        
+        if (!formData.title) {
+            alert("Title is required.");
+            return;  
+        }
+
         if (!formData.datetime) {
             alert("Start date is required.");
             return;
@@ -132,12 +145,10 @@ const MyCalendar: React.FC = () => {
     };
 
     const generateAICaption = async () => {
-        const prompt = [formData.title, formData.image, formData.video]
-            .filter(Boolean)
-            .join(" - ");
+        const prompt = formData.description?.trim();
 
         if (!prompt) {
-            alert("Please provide a title to generate a caption.");
+            alert("Please enter a short description to generate a caption.");
             return;
         }
 
@@ -174,6 +185,15 @@ const MyCalendar: React.FC = () => {
                     </h2>
                     {renderInput("title", "Title", formData.title)}
                     <div className="mb-2">
+                        <textarea
+                            name="description"
+                            placeholder="Describe what your post is about..."
+                            value={formData.description}
+                            onChange={handleFormChange}
+                            className="border p-2 mb-2 w-full h-24 resize-none"
+                        />
+                    </div>
+                    <div className="mb-2">
                         {renderInput("caption", "Caption", formData.caption)}
                         <Button variant="outline" type="button" onClick={generateAICaption}>
                             Generate Caption with AI
@@ -196,9 +216,11 @@ const MyCalendar: React.FC = () => {
             {selectedEvent && !isEditing && (
                 <Modal onClose={handleClosePreviewModal}>
                     <h2 className="text-xl font-bold mb-2">{selectedEvent.title}</h2>
-                    {renderField("Caption", selectedEvent.caption)}
-                    {renderField("Image", selectedEvent.image)}
-                    {renderField("Video", selectedEvent.video)}
+                    <div className="space-y-4">
+                        {renderField("Caption", selectedEvent.caption)}
+                        {renderField("Image", selectedEvent.image)}
+                        {renderField("Video", selectedEvent.video)}
+                    </div>
                     <div className="mt-4 flex justify-end gap-2">
                         <Button
                             variant="default"
