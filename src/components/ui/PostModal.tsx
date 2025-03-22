@@ -48,6 +48,10 @@ const PostModal: React.FC<Props> = ({ initialData, isEditing, onSubmit, onClose 
   };
 
   const handleSubmit = () => {
+    if (isRenderingImage) {
+      alert("Please wait for image to render");
+      return;
+    }
     const validationErrors = validatePost(formData);
     setErrors(validationErrors);
     if (Object.keys(validationErrors).length > 0) return;
@@ -72,6 +76,10 @@ const PostModal: React.FC<Props> = ({ initialData, isEditing, onSubmit, onClose 
   };
 
   const generateAIImage = async () => {
+    if (isRenderingImage) {
+      return;
+    }
+
     const prompt = formData.description?.trim();
     if (!prompt) {
       alert("Please enter a short description to generate an image.");
